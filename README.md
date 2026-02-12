@@ -6,39 +6,46 @@ A modern, beautiful Connect 4 game built with Next.js, TypeScript, and Tailwind 
 
 - 🎮 Play locally with a friend
 - 🤖 Play against the computer (AI)
-- 🌐 Play online with shared room codes
+- 🌐 Play online with shared room codes (coming soon)
 - 📱 Fully responsive design for mobile and desktop
-- ✨ Beautiful animations and transitions
-- ♿ Accessible with keyboard navigation and screen reader support
+- ✨ Beautiful animations with Framer Motion
+- 🎨 Modern UI with Tailwind CSS
+- ♿ Accessible with keyboard navigation and ARIA labels
+- 📖 Built-in help section with game instructions
 
 ## Tech Stack
 
-- **Next.js 14+** with App Router
+- **Next.js 16+** with App Router
 - **TypeScript** for type safety
 - **Tailwind CSS** for styling
+- **Framer Motion** for animations
+- **Lucide React** for icons
 - **React** with modern hooks
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/neima3/connect4.git
    cd connect4
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Start the development server:
+
    ```bash
    npm run dev
    ```
@@ -48,12 +55,15 @@ A modern, beautiful Connect 4 game built with Next.js, TypeScript, and Tailwind 
 ## Game Modes
 
 ### Local Two Players
+
 Two players take turns on the same device to play Connect 4.
 
 ### Play vs Computer
+
 Challenge the AI opponent in single-player mode.
 
 ### Play Online
+
 Create a room with a unique code or join an existing room to play with friends remotely.
 
 ## How to Play
@@ -77,7 +87,10 @@ Create a room with a unique code or join an existing room to play with friends r
 - `npm run build` - Build production version
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
+- `npm run lint:fix` - Run ESLint with auto-fix
 - `npm run type-check` - Run TypeScript type checking
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting
 
 ### Project Structure
 
@@ -88,14 +101,16 @@ src/
 │   ├── layout.tsx    # Root layout
 │   └── page.tsx      # Home page
 ├── components/       # React components
-│   ├── Connect4Game.tsx
-│   ├── GameBoard.tsx
-│   ├── GameControls.tsx
-│   └── GameStatus.tsx
+│   ├── board.tsx     # Game board component
+│   ├── game.tsx      # Main game component
+│   └── help.tsx      # Help modal component
 ├── types/           # TypeScript type definitions
 │   └── game.ts
 ├── hooks/           # Custom React hooks
+│   └── use-game-state.ts
 └── lib/             # Utility functions
+    ├── utils.ts     # Utility functions
+    └── game-logic.ts # Game logic
 ```
 
 ## Contributing

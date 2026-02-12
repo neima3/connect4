@@ -1,13 +1,20 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Connect 4 - Modern Online Game',
-  description: 'Play Connect 4 against the computer or friends online with beautiful animations and modern design.',
-  keywords: ['connect4', 'connect four', 'online game', 'board game', 'puzzle game'],
+  description:
+    'Play Connect 4 against the computer or friends online with beautiful animations and modern design.',
+  keywords: [
+    'connect4',
+    'connect four',
+    'online game',
+    'board game',
+    'puzzle game',
+  ],
   authors: [{ name: 'Connect4 Team' }],
   openGraph: {
     title: 'Connect 4 - Modern Online Game',
@@ -15,26 +22,22 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
   },
-}
+};
 
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: '#3b82f6',
-}
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-          {children}
-        </div>
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
-  )
+  );
 }

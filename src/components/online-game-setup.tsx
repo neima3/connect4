@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Copy, Users, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Room } from '@/types/game';
+import { useRoom } from '@/hooks/use-api';
 
 interface OnlineGameSetupProps {
   onStartGame: (code: string, playerNumber: 1 | 2) => void;
@@ -20,9 +21,13 @@ export function OnlineGameSetup({ onStartGame, onBack }: OnlineGameSetupProps) {
   const [copied, setCopied] = useState(false);
   const [createdRoom, setCreatedRoom] = useState<Room | null>(null);
 
-  const generateRoomCode = () => {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
-  };
+  // Use API for room operations
+  const {
+    createRoom: apiCreateRoom,
+    joinRoom: apiJoinRoom,
+    loading: apiLoading,
+    error: apiError,
+  } = useRoom();
 
   const createRoom = async () => {
     if (!playerName.trim()) {
@@ -34,20 +39,11 @@ export function OnlineGameSetup({ onStartGame, onBack }: OnlineGameSetupProps) {
     setError('');
 
     try {
-      const code = generateRoomCode();
-      const room: Room = {
-        code,
-        players: [playerName.trim()],
-        gameStarted: false,
-        createdAt: new Date(),
-      };
-
-      // Store room in localStorage (simulating server)
-      localStorage.setItem(`room_${code}`, JSON.stringify(room));
-      setCreatedRoom(room);
-      setRoomCode(code);
-    } catch (err) {
-      setError('Failed to create room');
+      const room = await apiCreateRoom([playerName.trim()]);
+      setCreatedRoom(room as Room);
+      setRoomCode((room as any).code);
+    } catch (err: any) {
+      setError(err.message || 'Failed to create room');
     } finally {
       setIsLoading(false);
     }
@@ -68,34 +64,12 @@ export function OnlineGameSetup({ onStartGame, onBack }: OnlineGameSetupProps) {
     setError('');
 
     try {
-      const stored = localStorage.getItem(`room_${roomCode.toUpperCase()}`);
-      if (!stored) {
-        setError('Room not found');
-        return;
-      }
-
-      const room: Room = JSON.parse(stored);
-      if (room.players.length >= 2) {
-        setError('Room is full');
-        return;
-      }
-
-      if (room.gameStarted) {
-        setError('Game already in progress');
-        return;
-      }
-
-      // Add player to room
-      room.players.push(playerName.trim());
-      localStorage.setItem(
-        `room_${roomCode.toUpperCase()}`,
-        JSON.stringify(room)
-      );
+      const room = await apiJoinRoom(roomCode.toUpperCase(), playerName.trim());
 
       // Start game as player 2
       onStartGame(roomCode.toUpperCase(), 2);
-    } catch (err) {
-      setError('Failed to join room');
+    } catch (err: any) {
+      setError(err.message || 'Failed to join room');
     } finally {
       setIsLoading(false);
     }
@@ -114,15 +88,21 @@ export function OnlineGameSetup({ onStartGame, onBack }: OnlineGameSetupProps) {
   const checkRoomStatus = () => {
     if (!createdRoom) return;
 
+    // For now, check localStorage for second player
+    // In a real implementation, this would use WebSocket or polling
     const stored = localStorage.getItem(`room_${createdRoom.code}`);
     if (!stored) return;
 
-    const room: Room = JSON.parse(stored);
-    if (room.players.length === 2 && !room.gameStarted) {
-      // Start game as player 1
-      room.gameStarted = true;
-      localStorage.setItem(`room_${createdRoom.code}`, JSON.stringify(room));
-      onStartGame(createdRoom.code, 1);
+    try {
+      const room: Room = JSON.parse(stored);
+      if (room.players.length === 2 && !room.gameStarted) {
+        // Start game as player 1
+        room.gameStarted = true;
+        localStorage.setItem(`room_${createdRoom.code}`, JSON.stringify(room));
+        onStartGame(createdRoom.code, 1);
+      }
+    } catch (error) {
+      console.error('Error checking room status:', error);
     }
   };
 

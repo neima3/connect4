@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Player, GameMode, GameState } from '@/types/game';
+import { useStats } from './use-api';
 
 interface GameStats {
   gamesPlayed: number;
@@ -26,30 +27,36 @@ const getDefaultStats = (): GameStats => ({
 });
 
 export function useGameStats() {
-  const [stats, setStats] = useState<GameStats>(getDefaultStats);
+  const [localStats, setLocalStats] = useState<GameStats>(getDefaultStats);
   const [gameStartTime, setGameStartTime] = useState<number>(Date.now());
   const [isGameActive, setIsGameActive] = useState(false);
 
-  // Load stats from localStorage on mount
+  // API stats
+  const { data: apiStats, loading: apiLoading } = useStats();
+
+  // Use API stats if available, otherwise use local stats
+  const stats = apiStats || localStats;
+
+  // Load local stats from localStorage on mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        setStats(JSON.parse(stored));
+        setLocalStats(JSON.parse(stored));
       }
     } catch (error) {
       console.warn('Failed to load stats from localStorage:', error);
     }
   }, []);
 
-  // Save stats to localStorage whenever they change
+  // Save local stats to localStorage whenever they change
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(localStats));
     } catch (error) {
       console.warn('Failed to save stats to localStorage:', error);
     }
-  }, [stats]);
+  }, [localStats]);
 
   const startGame = () => {
     setGameStartTime(Date.now());
@@ -72,7 +79,7 @@ export function useGameStats() {
           ((playerNumber === 1 && gameState.winner === 'red') ||
             (playerNumber === 2 && gameState.winner === 'yellow'))));
 
-    setStats((prev) => {
+    setLocalStats((prev) => {
       const newStats = { ...prev };
 
       // Update game count
@@ -121,7 +128,7 @@ export function useGameStats() {
   };
 
   const resetStats = () => {
-    setStats(getDefaultStats());
+    setLocalStats(getDefaultStats());
   };
 
   return {

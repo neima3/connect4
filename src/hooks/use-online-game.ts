@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { GameState, Player, Room } from '@/types/game';
-import { createInitialGameState } from '@/lib/game-logic';
+import {
+  createInitialGameState,
+  makeMove as gameLogicMakeMove,
+} from '@/lib/game-logic';
+import { useRoom } from './use-api';
 
 interface OnlineGameHookReturn {
   gameState: GameState;
@@ -8,6 +12,8 @@ interface OnlineGameHookReturn {
   isMyTurn: boolean;
   isConnected: boolean;
   opponentName: string;
+  loading: boolean;
+  error: any;
   makeMove: (col: number) => void;
   disconnect: () => void;
 }
@@ -19,48 +25,48 @@ export function useOnlineGame(
   const [gameState, setGameState] = useState<GameState>(
     createInitialGameState()
   );
-  const [isConnected, setIsConnected] = useState(false);
-  const [opponentName, setOpponentName] = useState('');
-  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
+  const [gameId, setGameId] = useState<string | null>(null);
+
+  const {
+    data: room,
+    loading: roomLoading,
+    error: roomError,
+    updateRoom,
+  } = useRoom(roomCode);
+
+  const isConnected = room && room.players.length >= 2;
+  const opponentName =
+    (room &&
+      room.players.find(
+        (_player: string, index: number) => index !== playerNumber - 1
+      )) ||
+    '';
 
   const isMyTurn =
     playerNumber === 1
       ? gameState.currentPlayer === 'red'
       : gameState.currentPlayer === 'yellow';
 
-  // Load initial game state
+  // Update game state when room data changes
   useEffect(() => {
-    const stored = localStorage.getItem(`game_${roomCode}`);
-    if (stored) {
-      setGameState(JSON.parse(stored));
+    if (room && room.gameId) {
+      setGameId(room.gameId);
     }
-  }, [roomCode]);
+  }, [room]);
 
-  // Load room info for opponent name
+  // Sync game state from room
   useEffect(() => {
-    const stored = localStorage.getItem(`room_${roomCode}`);
-    if (stored) {
-      const room: Room = JSON.parse(stored);
-      const opponent = room.players.find(
-        (_, index) => index !== playerNumber - 1
-      );
-      if (opponent) {
-        setOpponentName(opponent);
-        setIsConnected(true);
-      }
-    }
-  }, [roomCode, playerNumber]);
-
-  // Sync game state from localStorage
-  useEffect(() => {
+    // For now, we'll use localStorage as a simple sync mechanism
+    // In a real implementation, this would use WebSocket or polling
     const interval = setInterval(() => {
-      const stored = localStorage.getItem(`game_${roomCode}`);
-      if (stored) {
-        const newState: GameState = JSON.parse(stored);
-        // Only update if it's newer
-        if (newState.moveCount > gameState.moveCount) {
-          setGameState(newState);
-          setLastUpdate(Date.now());
+      if (roomCode) {
+        const stored = localStorage.getItem(`online_game_${roomCode}`);
+        if (stored) {
+          const newState: GameState = JSON.parse(stored);
+          // Only update if it's newer
+          if (newState.moveCount > gameState.moveCount) {
+            setGameState(newState);
+          }
         }
       }
     }, 500);
@@ -68,38 +74,47 @@ export function useOnlineGame(
     return () => clearInterval(interval);
   }, [roomCode, gameState.moveCount]);
 
-  const makeMove = (col: number) => {
-    if (!isMyTurn || gameState.isGameOver) return;
+  const makeMove = async (col: number) => {
+    if (!isMyTurn || gameState.isGameOver || !roomCode) return;
 
-    // Simulate game logic update
-    const updatedState = { ...gameState };
-    // Here you would call the actual game logic
-    // For now, we'll just increment move count and toggle player
-    updatedState.moveCount++;
-    updatedState.currentPlayer =
-      updatedState.currentPlayer === 'red' ? 'yellow' : 'red';
+    try {
+      // Apply move locally for immediate feedback
+      const result = gameLogicMakeMove(gameState, col);
+      if (!result.position) return;
 
-    // Save to localStorage (simulating server update)
-    localStorage.setItem(`game_${roomCode}`, JSON.stringify(updatedState));
-    setGameState(updatedState);
+      // Update game state
+      setGameState(result.gameState);
+
+      // Store in localStorage for sync (simulating server update)
+      localStorage.setItem(
+        `online_game_${roomCode}`,
+        JSON.stringify(result.gameState)
+      );
+
+      // In a real implementation, this would send the move to the server
+      // For now, we simulate it with localStorage sync
+    } catch (error) {
+      console.error('Failed to make move:', error);
+    }
   };
 
-  const disconnect = () => {
-    // Clean up game data
-    localStorage.removeItem(`game_${roomCode}`);
-
-    // Remove player from room
-    const roomStored = localStorage.getItem(`room_${roomCode}`);
-    if (roomStored) {
-      const room: Room = JSON.parse(roomStored);
-      room.players = room.players.filter(
-        (_, index) => index !== playerNumber - 1
-      );
-      if (room.players.length === 0) {
-        localStorage.removeItem(`room_${roomCode}`);
-      } else {
-        localStorage.setItem(`room_${roomCode}`, JSON.stringify(room));
+  const disconnect = async () => {
+    try {
+      // Remove player from room
+      if (room) {
+        const updatedPlayers = room.players.filter(
+          (_player: string, index: number) => index !== playerNumber - 1
+        );
+        await updateRoom({
+          players: updatedPlayers,
+          gameStarted: updatedPlayers.length >= 2,
+        });
       }
+
+      // Clean up local storage
+      localStorage.removeItem(`online_game_${roomCode}`);
+    } catch (error) {
+      console.error('Failed to disconnect:', error);
     }
   };
 
@@ -107,8 +122,10 @@ export function useOnlineGame(
     gameState,
     playerNumber,
     isMyTurn,
-    isConnected,
-    opponentName,
+    isConnected: isConnected || false,
+    opponentName: opponentName || '',
+    loading: roomLoading,
+    error: roomError,
     makeMove,
     disconnect,
   };

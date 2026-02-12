@@ -19,6 +19,7 @@ export function createInitialGameState(): GameState {
     isGameOver: false,
     moveCount: 0,
     status: 'waiting',
+    winningLine: null,
   };
 }
 
@@ -52,19 +53,20 @@ export function makeMove(
   newBoard[row][col] = gameState.currentPlayer;
 
   const newPosition = { row, col };
-  const isWinningMove = checkWin(newBoard, newPosition);
-  const isDraw = !isWinningMove && getValidMoves(newBoard).length === 0;
+  const winResult = checkWin(newBoard, newPosition);
+  const isDraw = !winResult.isWin && getValidMoves(newBoard).length === 0;
 
   return {
     gameState: {
       ...gameState,
       board: newBoard,
       currentPlayer: gameState.currentPlayer === 'red' ? 'yellow' : 'red',
-      winner: isWinningMove ? gameState.currentPlayer : null,
+      winner: winResult.isWin ? gameState.currentPlayer : null,
       isDraw,
-      isGameOver: isWinningMove || isDraw,
+      isGameOver: winResult.isWin || isDraw,
       moveCount: gameState.moveCount + 1,
-      status: isWinningMove ? 'won' : isDraw ? 'draw' : 'playing',
+      status: winResult.isWin ? 'won' : isDraw ? 'draw' : 'playing',
+      winningLine: winResult.winningLine,
     },
     position: newPosition,
   };
@@ -73,9 +75,9 @@ export function makeMove(
 export function checkWin(
   board: (Player | null)[][],
   lastMove: Position
-): boolean {
+): { isWin: boolean; winningLine: Position[] | null } {
   const player = board[lastMove.row][lastMove.col];
-  if (!player) return false;
+  if (!player) return { isWin: false, winningLine: null };
 
   const directions = [
     [0, 1], // horizontal
@@ -85,6 +87,7 @@ export function checkWin(
   ];
 
   for (const [dr, dc] of directions) {
+    const line: Position[] = [lastMove];
     let count = 1;
 
     // Check positive direction
@@ -94,6 +97,7 @@ export function checkWin(
       if (r < 0 || r >= ROWS || c < 0 || c >= COLS || board[r][c] !== player) {
         break;
       }
+      line.push({ row: r, col: c });
       count++;
     }
 
@@ -104,15 +108,16 @@ export function checkWin(
       if (r < 0 || r >= ROWS || c < 0 || c >= COLS || board[r][c] !== player) {
         break;
       }
+      line.unshift({ row: r, col: c });
       count++;
     }
 
     if (count >= WINNING_LENGTH) {
-      return true;
+      return { isWin: true, winningLine: line };
     }
   }
 
-  return false;
+  return { isWin: false, winningLine: null };
 }
 
 export function getAIMove(gameState: GameState): number {

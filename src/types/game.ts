@@ -10,6 +10,7 @@ export interface GameState {
   isGameOver: boolean;
   moveCount: number;
   status: GameStateStatus;
+  winningLine: Position[] | null;
 }
 
 export interface Room {

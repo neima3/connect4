@@ -16,29 +16,29 @@ export function Help({ isOpen, onClose }: HelpProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2 sm:p-4"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl"
+        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-4 sm:p-6 shadow-2xl mx-2 sm:mx-0"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <HelpCircle className="h-6 w-6 text-blue-500" />
-            <h2 className="text-2xl font-bold text-gray-800">
+            <HelpCircle className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
               How to Play Connect 4
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 hover:bg-gray-100 transition-colors"
+            className="rounded-lg p-1.5 sm:p-2 hover:bg-gray-100 transition-colors"
             aria-label="Close help"
           >
-            <X className="h-5 w-5 text-gray-500" />
+            <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
           </button>
         </div>
 
@@ -123,13 +123,18 @@ export function Help({ isOpen, onClose }: HelpProps) {
               </li>
               <li>
                 <strong>Keyboard:</strong> Use number keys 1-7 to select columns
-                (coming soon)
               </li>
               <li>
-                <strong>New Game:</strong> Start fresh at any time
+                <strong>H:</strong> Toggle help menu
               </li>
               <li>
-                <strong>Menu:</strong> Return to game mode selection
+                <strong>N:</strong> Start new game
+              </li>
+              <li>
+                <strong>M:</strong> Return to main menu
+              </li>
+              <li>
+                <strong>Escape:</strong> Close help or return to menu
               </li>
             </ul>
           </section>
